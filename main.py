@@ -196,7 +196,7 @@ class Minesweeper:
                         # Update number of hidden squares
                         self.environment[i + x][j + y][3] -= 1
 
-    def update_queues(self, curr_cell: Tuple[int, int], safe_cell_queue: List[Tuple[int, int]], mine_cell_queue: List[Tuple[int, int]]) -> None:
+    def     update_queues(self, curr_cell: Tuple[int, int], safe_cell_queue: List[Tuple[int, int]], mine_cell_queue: List[Tuple[int, int]]) -> None:
         i = curr_cell[0]
         j = curr_cell[1]
 
@@ -230,7 +230,6 @@ class Minesweeper:
                                 safe_cell_queue.append(safe_cell)
 
     def get_possible_neighbors(self, i: int, j: int) -> int:
-        possible_neighbors = 0
 
         if i == 0 or i == self._d - 1:
             if j == 0 or j == self._d - 1:
@@ -243,6 +242,9 @@ class Minesweeper:
         elif j == 0 or j == self._d - 1:
             # Edge
             possible_neighbors = 5
+        else:
+            # Central cell
+            possible_neighbors = 8
 
         return possible_neighbors
 
@@ -256,4 +258,4 @@ def main(d: int, n: int):
 
 
 if __name__ == '__main__':
-    main(3, 2)
+    main(4, 2)
