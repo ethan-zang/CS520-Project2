@@ -33,17 +33,18 @@ class Minesweeper:
         # Update hidden neighbor counts for edges
         for x in range(self._d):
             for y in range(self._d):
-                if x == 0 or x == self._d-1:
-                    if y == 0 or y == self._d-1:
-                        # Corner
-                        board[x][y][3] = 3
-                    else:
-                        # Edge
-                        board[x][y][3] = 5
-
-                elif y == 0 or y == self._d-1:
-                    # Edge
-                    board[x][y][3] = 5
+                board[x][y][3] = self.get_possible_neighbors(x, y)
+                # if x == 0 or x == self._d-1:
+                #     if y == 0 or y == self._d-1:
+                #         # Corner
+                #         board[x][y][3] = 3
+                #     else:
+                #         # Edge
+                #         board[x][y][3] = 5
+                #
+                # elif y == 0 or y == self._d-1:
+                #     # Edge
+                #     board[x][y][3] = 5
 
         return board
 
@@ -183,7 +184,7 @@ class Minesweeper:
         for x in range(-1, 2):
             for y in range(-1, 2):
                 if x != 0 or y != 0:
-                    if 0 <= i + x < self._d and 0 <= j + y < self._d and self.environment[i + x][j + y] != [9, 0, 0, 0]:
+                    if 0 <= i + x < self._d and 0 <= j + y < self._d:
 
                         if flag == 'safe':
                             # Update number of safe cells identified
@@ -228,7 +229,7 @@ class Minesweeper:
                             if safe_cell not in mine_cell_queue and safe_cell not in safe_cell_queue:
                                 safe_cell_queue.append(safe_cell)
 
-    def get_possible_neighbors(self, i: int, j: int):
+    def get_possible_neighbors(self, i: int, j: int) -> int:
         possible_neighbors = 0
 
         if i == 0 or i == self._d - 1:
