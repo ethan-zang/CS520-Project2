@@ -4,14 +4,31 @@ from queue import PriorityQueue
 
 
 class Minesweeper:
+    """
+    Defines Minesweeper class, which simulates Minesweeper game.
+    """
 
     def __init__(self, d, n):
+        """
+        Initialize Minesweeper properties.
+        Args:
+            d: dimension of board
+            n: number of mines
+        """
         self._d = d
         self._n = n
         self.environment = self.make_board()
         self.agent_board = [[-1 for _ in range(self._d)] for _ in range(self._d)]
 
     def make_board(self) -> List[List[List[int]]]:
+        """
+        Initialize board. At each index of the board, we use a list of size 4. The list is: [# of mines around, # of
+        safe neighbors identified, # of mine neighbors identified, # of hidden squares]. If there is a mine at an index,
+        it is represented as [9, 0, 0, 8].
+        Returns:
+            List[List[List[int]]]: 2D board representing Minesweeper board
+
+        """
         board = [[[0, 0, 0, 8] for _ in range(self._d)] for _ in range(self._d)]
 
         # Randomly places the mines
@@ -49,10 +66,16 @@ class Minesweeper:
         return board
 
     def print_environment(self) -> None:
+        """
+        Print board.
+        """
         for row in range(self._d):
             print(self.environment[row])
 
     def print_agent_board(self) -> None:
+        """
+        Print board from perspective of agent.
+        """
         for row in range(self._d):
             print(self.agent_board[row])
 
@@ -172,6 +195,9 @@ class Minesweeper:
         self.print_agent_board()
 
     def pick_random_cell(self) -> Tuple[int, int]:
+        """
+        Pick a random cell in the board that is hidden.
+        """
         i = random.randint(0, self._d - 1)
         j = random.randint(0, self._d - 1)
         while self.agent_board[i][j] != -1:
@@ -181,6 +207,15 @@ class Minesweeper:
         return i, j
 
     def update_environment(self, curr_cell: Tuple[int, int], flag: str) -> None:
+        """
+
+        Args:
+            curr_cell:
+            flag:
+
+        Returns:
+
+        """
         i = curr_cell[0]
         j = curr_cell[1]
 
@@ -276,7 +311,15 @@ class Minesweeper:
                                 safe_cell_queue.append(safe_cell)
 
     def get_possible_neighbors(self, i: int, j: int) -> int:
+        """
+        Calculate max possible neighbors based on whether cell is corner, edge, or neither.
+        Args:
+            i: x dimension index of cell
+            j: y dimension index of cell
 
+        Returns:
+            int: possible number of neighbors
+        """
         if i == 0 or i == self._d - 1:
             if j == 0 or j == self._d - 1:
                 # Corner
