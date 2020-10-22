@@ -16,8 +16,8 @@ class Minesweeper:
 
         # Randomly places the mines
         for _ in range(self._n):
-            i = random.randint(0, self._d-1)
-            j = random.randint(0, self._d-1)
+            i = random.randint(0, self._d - 1)
+            j = random.randint(0, self._d - 1)
             while board[i][j] == [9, 0, 0, 8]:
                 i = random.randint(0, self._d - 1)
                 j = random.randint(0, self._d - 1)
@@ -27,7 +27,7 @@ class Minesweeper:
             for x in range(-1, 2):
                 for y in range(-1, 2):
                     if x != 0 or y != 0:
-                        if 0 <= i+x < self._d and 0 <= j + y < self._d and board[i + x][j + y] != [9, 0, 0, 8]:
+                        if 0 <= i + x < self._d and 0 <= j + y < self._d and board[i + x][j + y] != [9, 0, 0, 8]:
                             board[i + x][j + y][0] += 1
 
         # Update hidden neighbor counts for edges
@@ -57,6 +57,9 @@ class Minesweeper:
             print(self.agent_board[row])
 
     def play_basic_game(self) -> None:
+        """
+        Driver for basic agent game, looking at essentialy 1 clue at a time.
+        """
         print("Let's play!")
 
         revealed_cells = 0
@@ -84,10 +87,10 @@ class Minesweeper:
                     # Update environment
                     self.update_environment(curr_cell, 'safe')
 
-                    # Update queues if safe cells or mines can be automatically identified
-                    # NOTE this can be consolidated into update_environment for marginal runtime improvements
-                    # I just separated this for clarity
-                    self.update_queues(curr_cell, safe_cell_queue, mine_cell_queue)
+                    # Update queues for all revealed cells on the island
+                    visited = [[False for _ in range(self._d)] for _ in range(self._d)]
+                    self.update_queues_island(curr_cell, safe_cell_queue, mine_cell_queue, visited)
+                    # self._update_queues(curr_cell, safe_cell_queue, mine_cell_queue)
 
                 # Picked a mine
                 else:
@@ -149,7 +152,8 @@ class Minesweeper:
                         self.update_environment(curr_cell, 'safe')
 
                         # Update queues
-                        self.update_queues(curr_cell, safe_cell_queue, mine_cell_queue)
+                        visited = [[False for _ in range(self._d)] for _ in range(self._d)]
+                        self.update_queues_island(curr_cell, safe_cell_queue, mine_cell_queue, visited)
 
                         revealed_cells += 1
 
@@ -196,7 +200,49 @@ class Minesweeper:
                         # Update number of hidden squares
                         self.environment[i + x][j + y][3] -= 1
 
-    def     update_queues(self, curr_cell: Tuple[int, int], safe_cell_queue: List[Tuple[int, int]], mine_cell_queue: List[Tuple[int, int]]) -> None:
+    def update_queues_island(self, curr_cell: Tuple[int, int], safe_cell_queue: List[Tuple[int, int]], mine_cell_queue: List[Tuple[int, int]], visited: List[List[bool]]) -> None:
+        """
+        Check for whether every hidden neighbor is safe / a mine for all revealed cells on the island. Note: the island
+        is defined as all connected cells such that they are adjacent directly and diagonally.
+        Args:
+            curr_cell: current cell
+            safe_cell_queue: queue of cells which are determined to be definitely safe
+            mine_cell_queue: queue of cells which are determined to be definitely mines
+            visited: marks cells as visited while update queues on the island
+        """
+        i = curr_cell[0]
+        j = curr_cell[1]
+        if i < 0 or i == self._d or j < 0 or j == self._d or visited[i][j] or self.agent_board[i][j] == -1:
+            return
+
+        print('Checking island...')
+        print(i)
+        print(j)
+
+        visited[i][j] = True
+        self._update_queues(curr_cell, safe_cell_queue, mine_cell_queue)
+
+        self.update_queues_island((i + 1, j), safe_cell_queue, mine_cell_queue, visited)
+        self.update_queues_island((i - 1, j), safe_cell_queue, mine_cell_queue, visited)
+        self.update_queues_island((i, j + 1), safe_cell_queue, mine_cell_queue, visited)
+        self.update_queues_island((i, j - 1), safe_cell_queue, mine_cell_queue, visited)
+
+        # Not sure if these 4 should also recurse / count as the island, but might as well (minimal cost for now,
+        # only has benefit)
+        self.update_queues_island((i - 1, j - 1), safe_cell_queue, mine_cell_queue, visited)
+        self.update_queues_island((i + 1, j + 1), safe_cell_queue, mine_cell_queue, visited)
+        self.update_queues_island((i - 1, j + 1), safe_cell_queue, mine_cell_queue, visited)
+        self.update_queues_island((i + 1, j - 1), safe_cell_queue, mine_cell_queue, visited)
+
+    def _update_queues(self, curr_cell: Tuple[int, int], safe_cell_queue: List[Tuple[int, int]], mine_cell_queue: List[Tuple[int, int]]) -> None:
+        """
+        Checks if for the current cell, the hidden neighbors can be determined to be definitely safe or definitely mines.
+        If either, add the corresponding cells to the corresponding safe or mine cell queue.
+        Args:
+            curr_cell: current cell
+            safe_cell_queue: queue of cells which are determined to be definitely safe
+            mine_cell_queue: queue of cells which are determined to be definitely mines
+        """
         i = curr_cell[0]
         j = curr_cell[1]
 
@@ -213,7 +259,7 @@ class Minesweeper:
                 for y in range(-1, 2):
                     if x != 0 or y != 0:
                         if 0 <= i + x < self._d and 0 <= j + y < self._d and self.agent_board[i + x][j + y] == -1:
-                            mine_cell = i+x, j+y
+                            mine_cell = i + x, j + y
                             # Make sure it does not already exist in either queue
                             if mine_cell not in mine_cell_queue and mine_cell not in safe_cell_queue:
                                 mine_cell_queue.append(mine_cell)
@@ -248,6 +294,7 @@ class Minesweeper:
 
         return possible_neighbors
 
+
 def main(d: int, n: int):
     print('Hello world')
     minesweeper = Minesweeper(d, n)
@@ -258,4 +305,4 @@ def main(d: int, n: int):
 
 
 if __name__ == '__main__':
-    main(4, 2)
+    main(3, 2)
