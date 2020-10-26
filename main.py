@@ -107,7 +107,9 @@ class Minesweeper:
 
                 # Picked a safe cell
                 if self.environment[curr_cell[0]][curr_cell[1]][0] != 9:
+                    # Update solved cells
                     self.solved_cells[curr_cell[0] * self._d + curr_cell[1]] = 0
+
                     # Update clue on agent board
                     self.agent_board[curr_cell[0]][curr_cell[1]] = self.environment[curr_cell[0]][curr_cell[1]][0]
 
@@ -125,6 +127,7 @@ class Minesweeper:
                 # Picked a mine
                 else:
                     mines_exploded += 1
+                    # Update solved cells
                     self.solved_cells[curr_cell[0] * self._d + curr_cell[1]] = 1
 
                     # Update mine on agent board
@@ -158,6 +161,7 @@ class Minesweeper:
                     # Reveal the mines
                     while mine_cell_queue:
                         curr_cell = mine_cell_queue.pop()
+                        # Update solved cells
                         self.solved_cells[curr_cell[0] * self._d + curr_cell[1]] = 1
 
                         print("Current mine cell: ", curr_cell)
@@ -183,6 +187,7 @@ class Minesweeper:
                     # Reveal the safe cells
                     while safe_cell_queue:
                         curr_cell = safe_cell_queue.pop()
+                        # Update solved cells
                         self.solved_cells[curr_cell[0] * self._d + curr_cell[1]] = 0
 
                         print("Current safe cell: ", curr_cell)
@@ -234,9 +239,6 @@ class Minesweeper:
         Args:
             curr_cell: cell that was revelead
             flag: whether revealed cell was safe or mine
-
-        Returns:
-
         """
         i = curr_cell[0]
         j = curr_cell[1]
@@ -257,36 +259,9 @@ class Minesweeper:
                         # Update number of hidden squares
                         self.environment[i + x][j + y][3] -= 1
 
-    # def instantiate_knowledge_base(self):
-    #     matrix_list = []
-    #     for i in range(self._d):
-    #         for j in range(self._d):
-    #             # Safe / clue cell
-    #             if self.agent_board[i][j] in range(0, 9):
-    #                 # index_to_add = i * self._d + j
-    #                 # safe_cell_equation = []
-    #                 #
-    #                 # # Add equation for safe cell
-    #                 # for k in range(self._d ** 2):
-    #                 #     if k == index_to_add:
-    #                 #         safe_cell_equation.append(1)
-    #                 #     else:
-    #                 #         safe_cell_equation.append(0)
-    #                 # safe_cell_equation.append(0)
-    #
-    #                 # Add equation for safe cell clue
-    #                 clue_equation = self.generate_neighbors_equation(i, j)
-    #                 hidden_mines = self.environment[i][j][0] - self.environment[i][j][2]
-    #                 clue_equation.append(hidden_mines)
-    #
-    #                 # matrix.append(safe_cell_equation)
-    #                 matrix_list.append(clue_equation)
-    #
-    #     matrix = Matrix(matrix_list)
-    #     return matrix
 
     def update_knowledge_base(self, new_clue_i: int, new_clue_j: int, safe_cell_queue: List[Tuple[int, int]],
-                              mine_cell_queue: List[Tuple[int, int]]):
+                              mine_cell_queue: List[Tuple[int, int]]) -> None:
         """
         Generate equations for the knowledge base in matrix and solve as much as possible.
         Args:
@@ -294,9 +269,6 @@ class Minesweeper:
             new_clue_j: y-coordinate of clue to add to knowledge base
             safe_cell_queue: queue of safe cells
             mine_cell_queue: queue of mine cells
-
-        Returns:
-
         """
         print('Updating knowledge base...')
         reduced = False
@@ -315,6 +287,7 @@ class Minesweeper:
 
         while not reduced:
             reduced = True
+            # Simply matrix
             self.simplify_rref(rref_matrix)
 
             for i in range(rref_matrix.shape[0]):
@@ -339,7 +312,6 @@ class Minesweeper:
                         cell = (element_i, element_j)
                         if cell not in safe_cell_queue:
                             safe_cell_queue.append(cell)
-                            #self.update_rref_matrix(rref_matrix, element_i, element_j, 0, i)
                             self.solved_cells[element] = 0
 
                 # All mine cells in equation
@@ -351,7 +323,6 @@ class Minesweeper:
                         cell = (element_i, element_j)
                         if cell not in mine_cell_queue:
                             mine_cell_queue.append(cell)
-                            #self.update_rref_matrix(rref_matrix, element_i, element_j, 1, i)
                             self.solved_cells[element] = 1
 
                 # 2 vars in equation
@@ -365,8 +336,6 @@ class Minesweeper:
                     second_cell = (i_1, j_1)
 
                     # Guess and check the 4 combos of 0,0 0,1 1,0 1,1
-                    # if rref_matrix[i][-1] == 0:
-                    #     continue
                     solution_flag = 0
                     coefficient_0 = rref_matrix[i, var_num_per_equation[0]]
                     coefficient_1 = rref_matrix[i, var_num_per_equation[1]]
@@ -394,8 +363,6 @@ class Minesweeper:
                             safe_cell_queue.append(first_cell)
                         if second_cell not in mine_cell_queue:
                             mine_cell_queue.append(second_cell)
-                        #self.update_rref_matrix(rref_matrix, i_0, j_0, 0, i)
-                        #self.update_rref_matrix(rref_matrix, i_1, j_1, 1, i)
                         self.solved_cells[var_num_per_equation[0]] = 0
                         self.solved_cells[var_num_per_equation[1]] = 1
                         reduced = False
@@ -404,8 +371,6 @@ class Minesweeper:
                             safe_cell_queue.append(first_cell)
                         if second_cell not in safe_cell_queue:
                             safe_cell_queue.append(second_cell)
-                        #self.update_rref_matrix(rref_matrix, i_0, j_0, 0, i)
-                        #self.update_rref_matrix(rref_matrix, i_1, j_1, 0, i)
                         self.solved_cells[var_num_per_equation[0]] = 0
                         self.solved_cells[var_num_per_equation[1]] = 0
                         reduced = False
@@ -414,8 +379,6 @@ class Minesweeper:
                             mine_cell_queue.append(first_cell)
                         if second_cell not in safe_cell_queue:
                             safe_cell_queue.append(second_cell)
-                        #self.update_rref_matrix(rref_matrix, i_0, j_0, 1, i)
-                        #self.update_rref_matrix(rref_matrix, i_1, j_1, 0, i)
                         self.solved_cells[var_num_per_equation[0]] = 1
                         self.solved_cells[var_num_per_equation[1]] = 0
                         reduced = False
@@ -424,8 +387,6 @@ class Minesweeper:
                             mine_cell_queue.append(first_cell)
                         if second_cell not in mine_cell_queue:
                             mine_cell_queue.append(second_cell)
-                        #self.update_rref_matrix(rref_matrix, i_0, j_0, 1, i)
-                        #self.update_rref_matrix(rref_matrix, i_1, j_1, 1, i)
                         self.solved_cells[var_num_per_equation[0]] = 1
                         self.solved_cells[var_num_per_equation[1]] = 1
                         reduced = False
@@ -442,64 +403,33 @@ class Minesweeper:
                     if rref_matrix[i, rref_matrix.shape[1]-1]/rref_matrix[i, var_num_per_equation[0]] == 1:
                         if cell not in mine_cell_queue:
                             mine_cell_queue.append(cell)
-                            #self.update_rref_matrix(rref_matrix, element_i, element_j, 1, i)
                     # Safe
                     else:
                         if cell not in safe_cell_queue:
                             safe_cell_queue.append(cell)
-                            #self.update_rref_matrix(rref_matrix, element_i, element_j, 0, i)
         print('Finished checking knowledge base.')
         self.knowledge_base = rref_matrix
 
-    def simplify_rref(self, rref_matrix: Matrix):
+    def simplify_rref(self, rref_matrix: Matrix) -> None:
         """
-        Utility method to plug in solved variables and delete zero rows from rref_matrix
+        Plug in solved variables and delete zero rows from rref_matrix
         Args:
             rref_matrix: knowledge base of equations stored as a matrix
-        Returns
         """
         rows_to_keep = []
         for i in range(rref_matrix.shape[0]):
+            # Only keep rows that do not have all zeroes
             if all(rref_matrix[i, index] != 0 for index in range(rref_matrix.shape[1])):
                 rows_to_keep.append(i)
                 continue
             for j in range(rref_matrix.shape[1] - 1):
+                # Update equation based on cells we already solved for
                 if j in self.solved_cells:
                     coefficient = rref_matrix[i, j]
                     rref_matrix[i, rref_matrix.shape[1] - 1] -= coefficient * self.solved_cells[j]
                     rref_matrix[i, j] = 0
 
         rref_matrix = rref_matrix[rows_to_keep, :]
-
-
-    # def update_rref_matrix(self, rref_matrix: Matrix, i: int, j: int, val: int, equation_num: int):
-    #     """
-    #     Using the solved variable, expressed as the "j" in the input, plug into all other equations in knowledge base
-    #     that contain that variable
-    #     Args:
-    #         rref_matrix: knowledge base
-    #         i: x-coordinate of solved variable
-    #         j: y-coordinate of solved variable
-    #         val: value of variable (0 or 1)
-    #         equation_num: equation where variable was solved
-    #
-    #     Returns:
-    #
-    #     """
-    #     var_num = int(i * self._d + j)
-    #     #print('Var_num:')
-    #     #print(var_num)
-    #
-    #     for x in range(rref_matrix.shape[0]):
-    #         if x != equation_num:
-    #             coefficient = rref_matrix[x, var_num]
-    #             rref_matrix[x, rref_matrix.shape[1] - 1] -= coefficient * val
-    #             rref_matrix[x, var_num] = 0
-    #         else:
-    #             for y in range(rref_matrix.shape[1]):
-    #                 if(y != var_num):
-    #                     rref_matrix[x, y] = 0
-    #             rref_matrix[x, rref_matrix.shape[1] - 1] = val
 
     def generate_neighbors_equation(self, i: int, j: int) -> List:
         """
@@ -519,16 +449,6 @@ class Minesweeper:
                     equation.append(1)
                 else:
                     equation.append(0)
-
-        # for x in range(-1, 2):
-        #     for y in range(-1, 2):
-        #         if x != 0 or y != 0:
-        #             if 0 <= i + x < self._d and 0 <= j + y < self._d:
-        #                 # Add hidden neighbor cell to equation
-        #                 if self.agent_board[x + i][y + j] == -1:
-        #                     equation.append(1)
-        #                 else:
-        #                     equation.append(0)
         return equation
 
     def update_queues_island(self, curr_cell: Tuple[int, int], safe_cell_queue: List[Tuple[int, int]],
@@ -646,4 +566,4 @@ def main(d: int, n: int):
 
 
 if __name__ == '__main__':
-    main(20, 160)
+    main(10, 40)
