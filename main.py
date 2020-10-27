@@ -22,6 +22,7 @@ class Minesweeper:
         self.agent_board = [[-1 for _ in range(self._d)] for _ in range(self._d)]
         self.knowledge_base = Matrix([])
         self.solved_cells = {}
+        self.probability_priorities = PriorityQueue()
 
     def make_board(self) -> List[List[List[int]]]:
         """
@@ -67,6 +68,64 @@ class Minesweeper:
                 #     board[x][y][3] = 5
 
         return board
+
+    def instantiate_probability_priorities(self) -> None:
+        """
+        Instantiate queue with 0 priorities initially, since no clues have been revealed yet.
+        """
+        for i in range(self._d):
+            for j in range(self._d):
+                self.probability_priorities.put((0, (i, j)))
+
+    def calculate_probability(self, i: int, j: int) -> float:
+        """
+        For the given cel, calculate the probability that it is a mine.
+        Args:
+            i: x index of cell
+            j: y index of cel
+            revealed_neighbor_clues: list which contains tuples structured such that first index is the
+
+        Returns:
+
+        """
+        revealed_neighbor_clues = []
+
+        # Calculate probabilities by checking neighboring clues
+        for x in range(-1, 2):
+            for y in range(-1, 2):
+                if x != 0 or y != 0:
+                    if 0 <= i + x < self._d and 0 <= j + y < self._d and self.agent_board[i + x][j + y] != 9:
+                        # First index of neighbor clue is the number of unrevealed mines for that particular
+                        # clue second index is the number of total hidden neighbors for that clue
+                        neighbor_clue_info = (self.environment[i + x][j + y][0] - self.environment[i + x][j + y][2],
+                                              self.environment[i + x][j + y][3])
+                        revealed_neighbor_clues.append(neighbor_clue_info)
+
+        priority = 0
+        # Calculate probability and add to queue as priority
+        for neighbor_clue_info in revealed_neighbor_clues:
+            priority += neighbor_clue_info[0] / neighbor_clue_info[1]
+        priority /= len(revealed_neighbor_clues)
+
+        # Add negative of priority since priority queues remove lower values first
+        return -1 * priority
+
+    def update_probabilities(self) -> None:
+        """
+        Update probability  values in the probability_priorities queue
+        """
+
+        # Loop through queue of cells and updated probability values
+        updated_queue = PriorityQueue()
+        while not self.probability_priorities.empty():
+            curr_cell = self.probability_priorities.get()[1]
+
+            # Only put cells with updated priorities back into queue if it hasn't been revealed
+            if self.agent_board[curr_cell[0]][curr_cell[1]] == -1:
+                new_priority = self.calculate_probability(curr_cell[0], curr_cell[1])
+                updated_queue.put((new_priority, curr_cell))
+
+        self.probability_priorities = updated_queue
 
     def print_environment(self) -> None:
         """
@@ -204,6 +263,209 @@ class Minesweeper:
                             self.update_queues_island(curr_cell, safe_cell_queue, mine_cell_queue, visited)
                         elif game_type == 'improved':
                             self.update_knowledge_base(curr_cell[0], curr_cell[1], safe_cell_queue, mine_cell_queue)
+
+                        revealed_cells += 1
+
+                        # self.print_environment()
+                        # self.print_agent_board()
+                        # print("Safe Cell Queue: ", safe_cell_queue)
+                        # print("Mine Queue: ", mine_cell_queue)
+                        print("Revealed cells: ", revealed_cells)
+                        # print()
+
+        # Game is over
+        print("Game over")
+        print("Mines safely identified: ", self._n - mines_exploded)
+        print("Total mines: ", self._n)
+        print("Revealed cells: ", revealed_cells)
+        self.print_agent_board()
+
+    def play_game_probability(self):
+        """
+        Driver for  agent game, basic and improved
+        """
+        print("Let's play!")
+
+        revealed_cells = 0
+        mines_exploded = 0
+
+        # Create queues
+        safe_cell_queue: List[Tuple[int, int]] = []
+        mine_cell_queue: List[Tuple[int, int]] = []
+
+        self.instantiate_probability_priorities()
+
+        game_start = True
+
+        # Play until all cells are revealed
+        while revealed_cells < self._d * self._d:
+            # Pick a random cell to begin
+            if game_start:
+                game_start = False
+                curr_cell = self.pick_random_cell()
+
+                print("Current random cell: ", curr_cell)
+
+                # Picked a safe cell
+                if self.environment[curr_cell[0]][curr_cell[1]][0] != 9:
+                    # Update solved cells
+                    self.solved_cells[curr_cell[0] * self._d + curr_cell[1]] = 0
+
+                    # Update clue on agent board
+                    self.agent_board[curr_cell[0]][curr_cell[1]] = self.environment[curr_cell[0]][curr_cell[1]][0]
+
+                    # Update environment
+                    self.update_environment(curr_cell, 'safe')
+
+                    # Update probabilities
+                    self.update_probabilities()
+
+                    # Update knowledge base
+                    self.update_knowledge_base(curr_cell[0], curr_cell[1], safe_cell_queue, mine_cell_queue)
+                    # self._update_queues(curr_cell, safe_cell_queue, mine_cell_queue)
+
+                # Picked a mine
+                else:
+                    mines_exploded += 1
+                    # Update solved cells
+                    self.solved_cells[curr_cell[0] * self._d + curr_cell[1]] = 1
+
+                    # Update mine on agent board
+                    self.agent_board[curr_cell[0]][curr_cell[1]] = 9
+
+                    # Update environment
+                    self.update_environment(curr_cell, 'mine')
+
+                    # Update probabilities
+                    self.update_probabilities()
+
+                    print("Exploded a mine.")
+
+                    # if game_type == 'basic':
+                    #     visited = [[False for _ in range(self._d)] for _ in range(self._d)]
+                    #     self.update_queues_island(curr_cell, safe_cell_queue, mine_cell_queue, visited)
+                    self.update_knowledge_base(curr_cell[0], curr_cell[1], safe_cell_queue, mine_cell_queue)
+
+                revealed_cells += 1
+
+                # self.print_environment()
+                # self.print_agent_board()
+                # print("Safe Cell Queue: ", safe_cell_queue)
+                # print("Mine Queue: ", mine_cell_queue)
+                print("Revealed cells: ", revealed_cells)
+                # print()
+
+            # No cells in safe or mine queue --> pick a cell from priority queue
+            elif not safe_cell_queue and not mine_cell_queue:
+
+                curr_cell = self.probability_priorities.get()[1]
+                while self.agent_board[curr_cell[0]][curr_cell[1]] != -1:
+                    curr_cell = self.probability_priorities.get()[1]
+
+                print("Current probability queue cell: ", curr_cell)
+
+                # Picked a safe cell
+                if self.environment[curr_cell[0]][curr_cell[1]][0] != 9:
+                    # Update solved cells
+                    self.solved_cells[curr_cell[0] * self._d + curr_cell[1]] = 0
+
+                    # Update clue on agent board
+                    self.agent_board[curr_cell[0]][curr_cell[1]] = self.environment[curr_cell[0]][curr_cell[1]][0]
+
+                    # Update environment
+                    self.update_environment(curr_cell, 'safe')
+
+                    # Update probabilities
+                    self.update_probabilities()
+
+                    # Update knowledge base
+                    self.update_knowledge_base(curr_cell[0], curr_cell[1], safe_cell_queue, mine_cell_queue)
+                    # self._update_queues(curr_cell, safe_cell_queue, mine_cell_queue)
+
+                # Picked a mine
+                else:
+                    mines_exploded += 1
+                    # Update solved cells
+                    self.solved_cells[curr_cell[0] * self._d + curr_cell[1]] = 1
+
+                    # Update mine on agent board
+                    self.agent_board[curr_cell[0]][curr_cell[1]] = 9
+
+                    # Update environment
+                    self.update_environment(curr_cell, 'mine')
+
+                    # Update probabilities
+                    self.update_probabilities()
+
+                    print("Exploded a mine.")
+
+                    # if game_type == 'basic':
+                    #     visited = [[False for _ in range(self._d)] for _ in range(self._d)]
+                    #     self.update_queues_island(curr_cell, safe_cell_queue, mine_cell_queue, visited)
+                    self.update_knowledge_base(curr_cell[0], curr_cell[1], safe_cell_queue, mine_cell_queue)
+
+                revealed_cells += 1
+
+                # self.print_environment()
+                # self.print_agent_board()
+                # print("Safe Cell Queue: ", safe_cell_queue)
+                # print("Mine Queue: ", mine_cell_queue)
+                print("Revealed cells: ", revealed_cells)
+                # print()
+
+            # Cells have been identified as mine/safe, so reveal/mark and update info
+            else:
+                # (i am not sure if order of reveal matters)
+                while mine_cell_queue or safe_cell_queue:
+
+                    # Reveal the mines
+                    while mine_cell_queue:
+                        curr_cell = mine_cell_queue.pop()
+                        # Update solved cells
+                        self.solved_cells[curr_cell[0] * self._d + curr_cell[1]] = 1
+
+                        print("Current mine cell: ", curr_cell)
+
+                        # Update mine on agent board
+                        self.agent_board[curr_cell[0]][curr_cell[1]] = 9
+
+                        # Update environment
+                        self.update_environment(curr_cell, 'mine')
+
+                        # Update probabilities
+                        self.update_probabilities()
+
+                        revealed_cells += 1
+
+                        self.update_knowledge_base(curr_cell[0], curr_cell[1], safe_cell_queue, mine_cell_queue)
+
+                        # self.print_environment()
+                        # self.print_agent_board()
+                        # print("Safe Cell Queue: ", safe_cell_queue)
+                        # print("Mine Queue: ", mine_cell_queue)
+                        print("Revealed cells: ", revealed_cells)
+                        # print()
+
+                    # Reveal the safe cells
+                    while safe_cell_queue:
+                        curr_cell = safe_cell_queue.pop()
+                        # Update solved cells
+                        self.solved_cells[curr_cell[0] * self._d + curr_cell[1]] = 0
+
+                        print("Current safe cell: ", curr_cell)
+
+                        # Update clue on agent board
+                        self.agent_board[curr_cell[0]][curr_cell[1]] = self.environment[curr_cell[0]][curr_cell[1]][
+                            0]
+
+                        # Update environment
+                        self.update_environment(curr_cell, 'safe')
+
+                        # Update probabilities
+                        self.update_probabilities()
+
+                        # Update queues
+                        self.update_knowledge_base(curr_cell[0], curr_cell[1], safe_cell_queue, mine_cell_queue)
 
                         revealed_cells += 1
 
@@ -563,7 +825,7 @@ def main(d: int, n: int):
     minesweeper.print_agent_board()
 
     minesweeper.play_game('improved')
-
+    # minesweeper.play_game_probability()
 
 if __name__ == '__main__':
     main(10, 40)
