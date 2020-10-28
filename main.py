@@ -208,12 +208,12 @@ class Minesweeper:
 
                 revealed_cells += 1
 
-                # self.print_environment()
-                # self.print_agent_board()
-                # print("Safe Cell Queue: ", safe_cell_queue)
-                # print("Mine Queue: ", mine_cell_queue)
+                self.print_environment()
+                self.print_agent_board()
+                print("Safe Cell Queue: ", safe_cell_queue)
+                print("Mine Queue: ", mine_cell_queue)
                 print("Revealed cells: ", revealed_cells)
-                # print()
+                print()
 
             # Cells have been identified as mine/safe, so reveal/mark and update info
             else:
@@ -239,12 +239,12 @@ class Minesweeper:
                         if game_type == 'improved':
                             self.update_knowledge_base(curr_cell[0], curr_cell[1], safe_cell_queue, mine_cell_queue)
 
-                        # self.print_environment()
-                        # self.print_agent_board()
-                        # print("Safe Cell Queue: ", safe_cell_queue)
-                        # print("Mine Queue: ", mine_cell_queue)
+                        self.print_environment()
+                        self.print_agent_board()
+                        print("Safe Cell Queue: ", safe_cell_queue)
+                        print("Mine Queue: ", mine_cell_queue)
                         print("Revealed cells: ", revealed_cells)
-                        # print()
+                        print()
 
                     # Reveal the safe cells
                     while safe_cell_queue:
@@ -269,12 +269,12 @@ class Minesweeper:
 
                         revealed_cells += 1
 
-                        # self.print_environment()
-                        # self.print_agent_board()
-                        # print("Safe Cell Queue: ", safe_cell_queue)
-                        # print("Mine Queue: ", mine_cell_queue)
+                        self.print_environment()
+                        self.print_agent_board()
+                        print("Safe Cell Queue: ", safe_cell_queue)
+                        print("Mine Queue: ", mine_cell_queue)
                         print("Revealed cells: ", revealed_cells)
-                        # print()
+                        print()
 
         # Game is over
         print("Game over")
@@ -354,12 +354,12 @@ class Minesweeper:
 
                 revealed_cells += 1
 
-                # self.print_environment()
-                # self.print_agent_board()
-                # print("Safe Cell Queue: ", safe_cell_queue)
-                # print("Mine Queue: ", mine_cell_queue)
+                self.print_environment()
+                self.print_agent_board()
+                print("Safe Cell Queue: ", safe_cell_queue)
+                print("Mine Queue: ", mine_cell_queue)
                 print("Revealed cells: ", revealed_cells)
-                # print()
+                print()
 
             # No cells in safe or mine queue --> pick a cell from priority queue
             elif not safe_cell_queue and not mine_cell_queue:
@@ -454,12 +454,12 @@ class Minesweeper:
 
                 revealed_cells += 1
 
-                # self.print_environment()
-                # self.print_agent_board()
-                # print("Safe Cell Queue: ", safe_cell_queue)
-                # print("Mine Queue: ", mine_cell_queue)
+                self.print_environment()
+                self.print_agent_board()
+                print("Safe Cell Queue: ", safe_cell_queue)
+                print("Mine Queue: ", mine_cell_queue)
                 print("Revealed cells: ", revealed_cells)
-                # print()
+                print()
 
             # Cells have been identified as mine/safe, so reveal/mark and update info
             else:
@@ -591,19 +591,22 @@ class Minesweeper:
             clue_equation = self.generate_neighbors_equation(new_clue_i, new_clue_j)
             hidden_mines = self.environment[new_clue_i][new_clue_j][0] - self.environment[new_clue_i][new_clue_j][2]
             clue_equation.append(hidden_mines)
-            #print("Clue equation: ", clue_equation)
+            print("Clue equation: ", clue_equation)
             self.knowledge_base = self.knowledge_base.row_insert(0, Matrix([clue_equation]))
             #pprint(self.knowledge_base)
 
         else:
             reduced = True
-        # pprint(matrix)
+        # pprint(self.knowledge_base.rref()[0])
         rref_matrix = self.knowledge_base.rref()[0]
+        # pprint(rref_matrix)
 
         while not reduced:
             reduced = True
             # Simply matrix
-            self.simplify_rref(rref_matrix)
+            rref_matrix = self.simplify_rref(rref_matrix)
+            print('In loop')
+            pprint(rref_matrix)
 
             for i in range(rref_matrix.shape[0]):
                 var_num_per_equation = []
@@ -620,7 +623,7 @@ class Minesweeper:
                 # All safe cells in equation
                 if rref_matrix[i, rref_matrix.shape[1] - 1] == 0 and all(rref_matrix[i, index] > 0 for index in
                                                                          var_num_per_equation):
-                    #print('All safe equation')
+                    print('All safe equation')
                     for element in var_num_per_equation:
                         element_j = int(element % self._d)
                         element_i = int((element - element_j) / self._d)
@@ -631,7 +634,7 @@ class Minesweeper:
 
                 # All mine cells in equation
                 elif rref_matrix[i, rref_matrix.shape[1] - 1] == sum_in_var_nums and all(rref_matrix[i, index] > 0 for index in var_num_per_equation):
-                    #print('All mine equation')
+                    print('All mine equation')
                     for element in var_num_per_equation:
                         element_j = int(element % self._d)
                         element_i = int((element - element_j) / self._d)
@@ -642,7 +645,7 @@ class Minesweeper:
 
                 # 2 vars in equation
                 elif len(var_num_per_equation) == 2:
-                    #print('2 var equation')
+                    print('2 var equation')
                     j_0 = int(var_num_per_equation[0] % self._d)
                     i_0 = int((var_num_per_equation[0] - j_0) / self._d)
                     j_1 = int(var_num_per_equation[1] % self._d)
@@ -708,7 +711,7 @@ class Minesweeper:
 
                 # 1 var in equation
                 elif len(var_num_per_equation) == 1:
-                    #print('1 var equation')
+                    print('1 var equation')
                     element_j = int(var_num_per_equation[0] % self._d)
                     element_i = int((var_num_per_equation[0] - element_j) / self._d)
                     cell = (element_i, element_j)
@@ -733,23 +736,24 @@ class Minesweeper:
         """
         rows_to_keep = []
         for i in range(rref_matrix.shape[0]):
-            # Only keep rows that do not have all zeroes
-            if any(rref_matrix[i, index] != 0 for index in range(rref_matrix.shape[1])):
-                rows_to_keep.append(i)
-                # continue
             for j in range(rref_matrix.shape[1] - 1):
                 # Update equation based on cells we already solved for
                 if j in self.solved_cells:
                     coefficient = rref_matrix[i, j]
                     rref_matrix[i, rref_matrix.shape[1] - 1] -= coefficient * self.solved_cells[j]
                     rref_matrix[i, j] = 0
+            # Only keep rows that do not have all zeroes
+            if any(rref_matrix[i, index] != 0 for index in range(rref_matrix.shape[1])):
+                rows_to_keep.append(i)
+                # continue
 
         # print("Before removing zeros")
         # pprint(rref_matrix)
         # print("Rows to keep: ", rows_to_keep)
         rref_matrix = rref_matrix[rows_to_keep, :]
-        # print("After removing zeros")
-        # pprint(rref_matrix)
+        print("After removing zeros")
+        pprint(rref_matrix)
+        return rref_matrix
 
     def generate_neighbors_equation(self, i: int, j: int) -> List:
         """
@@ -882,8 +886,8 @@ def main(d: int, n: int):
     minesweeper.print_environment()
     minesweeper.print_agent_board()
 
-    # minesweeper.play_game('improved')
-    minesweeper.play_game_probability("triple")
+    minesweeper.play_game('improved')
+    # minesweeper.play_game_probability("triple")
 
 if __name__ == '__main__':
-    main(10, 40)
+    main(20, 100)
