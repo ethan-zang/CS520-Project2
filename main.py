@@ -27,8 +27,8 @@ class Minesweeper:
     def make_board(self) -> List[List[List[int]]]:
         """
         Initialize board. At each index of the board, we use a list of size 4. The list is: [# of mines around, # of
-        safe neighbors identified, # of mine neighbors identified, # of hidden squares]. If there is a mine at an index,
-        it is represented as [9, 0, 0, 8].
+        safe neighbors identified, # of mine neighbors identified, # of hidden neighbors]. If there is a mine at an index,
+        it is represented as [9, # of safe neighbors identified, # of mine neighbors identified, # of hidden neighbors].
         Returns:
             List[List[List[int]]]: 2D board representing Minesweeper board
 
@@ -75,18 +75,17 @@ class Minesweeper:
         """
         for i in range(self._d):
             for j in range(self._d):
-                self.probability_priorities.put((0, (i, j)))
+                self.probability_priorities.put((2, (i, j)))
 
     def calculate_probability(self, i: int, j: int) -> float:
         """
-        For the given cel, calculate the probability that it is a mine.
+        For the given cell, calculate the probability that it is a mine.
         Args:
             i: x index of cell
-            j: y index of cel
-            revealed_neighbor_clues: list which contains tuples structured such that first index is the
+            j: y index of cell
 
         Returns:
-
+            priority: a probability value for the cell at (i,j)
         """
         revealed_neighbor_clues = []
 
@@ -94,7 +93,7 @@ class Minesweeper:
         for x in range(-1, 2):
             for y in range(-1, 2):
                 if x != 0 or y != 0:
-                    if 0 <= i + x < self._d and 0 <= j + y < self._d and self.agent_board[i + x][j + y] != 9:
+                    if 0 <= i + x < self._d and 0 <= j + y < self._d and -1 < self.agent_board[i + x][j + y] < 9:
                         # First index of neighbor clue is the number of unrevealed mines for that particular
                         # clue second index is the number of total hidden neighbors for that clue
                         neighbor_clue_info = (self.environment[i + x][j + y][0] - self.environment[i + x][j + y][2],
@@ -105,10 +104,14 @@ class Minesweeper:
         # Calculate probability and add to queue as priority
         for neighbor_clue_info in revealed_neighbor_clues:
             priority += neighbor_clue_info[0] / neighbor_clue_info[1]
-        priority /= len(revealed_neighbor_clues)
 
-        # Add negative of priority since priority queues remove lower values first
-        return -1 * priority
+        if priority != 0:
+            priority /= len(revealed_neighbor_clues)
+        else:
+            priority = 2
+
+        # Return priority values
+        return priority
 
     def update_probabilities(self) -> None:
         """
@@ -280,7 +283,7 @@ class Minesweeper:
         print("Revealed cells: ", revealed_cells)
         self.print_agent_board()
 
-    def play_game_probability(self):
+    def play_game_probability(self, flag: str):
         """
         Driver for  agent game, basic and improved
         """
@@ -303,6 +306,9 @@ class Minesweeper:
             if game_start:
                 game_start = False
                 curr_cell = self.pick_random_cell()
+                if flag == "triple":
+                    while not 0 < curr_cell[0] < self._d-1 or not 0 < curr_cell[1] < self._d-1:
+                        curr_cell = self.pick_random_cell()
 
                 print("Current random cell: ", curr_cell)
 
@@ -358,9 +364,51 @@ class Minesweeper:
             # No cells in safe or mine queue --> pick a cell from priority queue
             elif not safe_cell_queue and not mine_cell_queue:
 
-                curr_cell = self.probability_priorities.get()[1]
+                # Pick a cell from priority queue until we have found a cell that hasn't been revealed yet
+                queue_cell = self.probability_priorities.get()
+                curr_cell = queue_cell[1]
+                curr_prob = queue_cell[0]
                 while self.agent_board[curr_cell[0]][curr_cell[1]] != -1:
-                    curr_cell = self.probability_priorities.get()[1]
+                    queue_cell = self.probability_priorities.get()
+                    curr_cell = queue_cell[1]
+                    curr_prob = queue_cell[0]
+
+                # Additional checks for triple improved agent
+                if flag == "triple":
+                    print("TRIPLE CASE")
+                    # Create a list to track cells removed from the queue in this step
+                    popped_cells: List[Tuple[int, Tuple[int, int]]] = []
+                    # Add initial cell to the List
+                    popped_cells.append(queue_cell)
+                    loop = True
+                    while loop and not self.probability_priorities.empty():
+                        # Remove new cells from the queue until we find one that doesn't match the current probability
+                        popped = self.probability_priorities.get()
+                        if self.agent_board[popped[1][0]][popped[1][1]] == -1:
+                            if popped[0] != curr_prob:
+                                loop = False
+                                # If probability didn't match, put cell back in queue
+                                self.probability_priorities.put(popped)
+                            else:
+                                # If probability did match, add cell to list of popped_cells
+                                popped_cells.append(popped)
+                        else:
+                            continue
+
+                    # Initialize a minimum distance variable and find the cell with minimum distance from the center
+                    min_distance = self._d * 2
+                    min_distance_cell = None
+                    for cell in popped_cells:
+                        if self.calculate_distance(cell[1][0], cell[1][1]) < min_distance:
+                            min_distance = self.calculate_distance(cell[1][0], cell[1][1])
+                            min_distance_cell = cell[1]
+                    for cell in popped_cells:
+                        if cell[1] == min_distance_cell:
+                            curr_cell = cell[1]
+                        else:
+                            self.probability_priorities.put(cell)
+
+
 
                 print("Current probability queue cell: ", curr_cell)
 
@@ -482,6 +530,11 @@ class Minesweeper:
         print("Total mines: ", self._n)
         print("Revealed cells: ", revealed_cells)
         self.print_agent_board()
+
+    def calculate_distance(self, i: int, j: int) -> int:
+        distance = (int(self._d/2) - i) ** 2 + (int(self._d/2) - j) ** 2
+        distance = distance ** 0.5
+        return distance
 
     def pick_random_cell(self) -> Tuple[int, int]:
         """
@@ -681,9 +734,9 @@ class Minesweeper:
         rows_to_keep = []
         for i in range(rref_matrix.shape[0]):
             # Only keep rows that do not have all zeroes
-            if all(rref_matrix[i, index] != 0 for index in range(rref_matrix.shape[1])):
+            if any(rref_matrix[i, index] != 0 for index in range(rref_matrix.shape[1])):
                 rows_to_keep.append(i)
-                continue
+                # continue
             for j in range(rref_matrix.shape[1] - 1):
                 # Update equation based on cells we already solved for
                 if j in self.solved_cells:
@@ -691,7 +744,12 @@ class Minesweeper:
                     rref_matrix[i, rref_matrix.shape[1] - 1] -= coefficient * self.solved_cells[j]
                     rref_matrix[i, j] = 0
 
+        # print("Before removing zeros")
+        # pprint(rref_matrix)
+        # print("Rows to keep: ", rows_to_keep)
         rref_matrix = rref_matrix[rows_to_keep, :]
+        # print("After removing zeros")
+        # pprint(rref_matrix)
 
     def generate_neighbors_equation(self, i: int, j: int) -> List:
         """
@@ -824,8 +882,8 @@ def main(d: int, n: int):
     minesweeper.print_environment()
     minesweeper.print_agent_board()
 
-    minesweeper.play_game('improved')
-    # minesweeper.play_game_probability()
+    # minesweeper.play_game('improved')
+    minesweeper.play_game_probability("triple")
 
 if __name__ == '__main__':
     main(10, 40)
