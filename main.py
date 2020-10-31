@@ -2,7 +2,7 @@ import random
 from sympy import *
 from typing import List, Tuple
 from queue import PriorityQueue
-
+import time
 
 class Minesweeper:
     """
@@ -181,7 +181,7 @@ class Minesweeper:
                     # Update queues for all revealed cells on the island
                     if game_type == 'basic':
                         visited = [[False for _ in range(self._d)] for _ in range(self._d)]
-                        self.update_queues_island(curr_cell, safe_cell_queue, mine_cell_queue, visited)
+                        self.update_queues_island(curr_cell, safe_cell_queue, mine_cell_queue, visited, curr_cell)
                     elif game_type == 'improved':
                         self.update_knowledge_base(curr_cell[0], curr_cell[1], safe_cell_queue, mine_cell_queue)
                     # self._update_queues(curr_cell, safe_cell_queue, mine_cell_queue)
@@ -208,12 +208,12 @@ class Minesweeper:
 
                 revealed_cells += 1
 
-                self.print_environment()
-                self.print_agent_board()
-                print("Safe Cell Queue: ", safe_cell_queue)
-                print("Mine Queue: ", mine_cell_queue)
+                # self.print_environment()
+                # self.print_agent_board()
+                # print("Safe Cell Queue: ", safe_cell_queue)
+                # print("Mine Queue: ", mine_cell_queue)
                 print("Revealed cells: ", revealed_cells)
-                print()
+                # print()
 
             # Cells have been identified as mine/safe, so reveal/mark and update info
             else:
@@ -239,12 +239,12 @@ class Minesweeper:
                         if game_type == 'improved':
                             self.update_knowledge_base(curr_cell[0], curr_cell[1], safe_cell_queue, mine_cell_queue)
 
-                        self.print_environment()
-                        self.print_agent_board()
-                        print("Safe Cell Queue: ", safe_cell_queue)
-                        print("Mine Queue: ", mine_cell_queue)
+                        # self.print_environment()
+                        # self.print_agent_board()
+                        # print("Safe Cell Queue: ", safe_cell_queue)
+                        # print("Mine Queue: ", mine_cell_queue)
                         print("Revealed cells: ", revealed_cells)
-                        print()
+                        # print()
 
                     # Reveal the safe cells
                     while safe_cell_queue:
@@ -263,18 +263,18 @@ class Minesweeper:
                         # Update queues
                         if game_type == 'basic':
                             visited = [[False for _ in range(self._d)] for _ in range(self._d)]
-                            self.update_queues_island(curr_cell, safe_cell_queue, mine_cell_queue, visited)
+                            self.update_queues_island(curr_cell, safe_cell_queue, mine_cell_queue, visited, curr_cell)
                         elif game_type == 'improved':
                             self.update_knowledge_base(curr_cell[0], curr_cell[1], safe_cell_queue, mine_cell_queue)
 
                         revealed_cells += 1
 
-                        self.print_environment()
-                        self.print_agent_board()
-                        print("Safe Cell Queue: ", safe_cell_queue)
-                        print("Mine Queue: ", mine_cell_queue)
+                        # self.print_environment()
+                        # self.print_agent_board()
+                        # print("Safe Cell Queue: ", safe_cell_queue)
+                        # print("Mine Queue: ", mine_cell_queue)
                         print("Revealed cells: ", revealed_cells)
-                        print()
+                        # print()
 
         # Game is over
         print("Game over")
@@ -354,12 +354,12 @@ class Minesweeper:
 
                 revealed_cells += 1
 
-                self.print_environment()
-                self.print_agent_board()
-                print("Safe Cell Queue: ", safe_cell_queue)
-                print("Mine Queue: ", mine_cell_queue)
+                # self.print_environment()
+                # self.print_agent_board()
+                # print("Safe Cell Queue: ", safe_cell_queue)
+                # print("Mine Queue: ", mine_cell_queue)
                 print("Revealed cells: ", revealed_cells)
-                print()
+                # print()
 
             # No cells in safe or mine queue --> pick a cell from priority queue
             elif not safe_cell_queue and not mine_cell_queue:
@@ -375,7 +375,7 @@ class Minesweeper:
 
                 # Additional checks for triple improved agent
                 if flag == "triple":
-                    print("TRIPLE CASE")
+                    # print("TRIPLE CASE")
                     # Create a list to track cells removed from the queue in this step
                     popped_cells: List[Tuple[int, Tuple[int, int]]] = []
                     # Add initial cell to the List
@@ -454,12 +454,12 @@ class Minesweeper:
 
                 revealed_cells += 1
 
-                self.print_environment()
-                self.print_agent_board()
-                print("Safe Cell Queue: ", safe_cell_queue)
-                print("Mine Queue: ", mine_cell_queue)
+                # self.print_environment()
+                # self.print_agent_board()
+                # print("Safe Cell Queue: ", safe_cell_queue)
+                # print("Mine Queue: ", mine_cell_queue)
                 print("Revealed cells: ", revealed_cells)
-                print()
+                # print()
 
             # Cells have been identified as mine/safe, so reveal/mark and update info
             else:
@@ -585,13 +585,13 @@ class Minesweeper:
             safe_cell_queue: queue of safe cells
             mine_cell_queue: queue of mine cells
         """
-        print('Updating knowledge base...')
+        # print('Updating knowledge base...')
         reduced = False
         if self.agent_board[new_clue_i][new_clue_j] in range(0, 9):
             clue_equation = self.generate_neighbors_equation(new_clue_i, new_clue_j)
             hidden_mines = self.environment[new_clue_i][new_clue_j][0] - self.environment[new_clue_i][new_clue_j][2]
             clue_equation.append(hidden_mines)
-            print("Clue equation: ", clue_equation)
+            # print("Clue equation: ", clue_equation)
             self.knowledge_base = self.knowledge_base.row_insert(0, Matrix([clue_equation]))
             #pprint(self.knowledge_base)
 
@@ -605,8 +605,8 @@ class Minesweeper:
             reduced = True
             # Simply matrix
             rref_matrix = self.simplify_rref(rref_matrix)
-            print('In loop')
-            pprint(rref_matrix)
+            # print('In loop')
+            # pprint(rref_matrix)
 
             for i in range(rref_matrix.shape[0]):
                 var_num_per_equation = []
@@ -623,7 +623,7 @@ class Minesweeper:
                 # All safe cells in equation
                 if rref_matrix[i, rref_matrix.shape[1] - 1] == 0 and all(rref_matrix[i, index] > 0 for index in
                                                                          var_num_per_equation):
-                    print('All safe equation')
+                    # print('All safe equation')
                     for element in var_num_per_equation:
                         element_j = int(element % self._d)
                         element_i = int((element - element_j) / self._d)
@@ -634,7 +634,7 @@ class Minesweeper:
 
                 # All mine cells in equation
                 elif rref_matrix[i, rref_matrix.shape[1] - 1] == sum_in_var_nums and all(rref_matrix[i, index] > 0 for index in var_num_per_equation):
-                    print('All mine equation')
+                    # print('All mine equation')
                     for element in var_num_per_equation:
                         element_j = int(element % self._d)
                         element_i = int((element - element_j) / self._d)
@@ -645,7 +645,7 @@ class Minesweeper:
 
                 # 2 vars in equation
                 elif len(var_num_per_equation) == 2:
-                    print('2 var equation')
+                    # print('2 var equation')
                     j_0 = int(var_num_per_equation[0] % self._d)
                     i_0 = int((var_num_per_equation[0] - j_0) / self._d)
                     j_1 = int(var_num_per_equation[1] % self._d)
@@ -711,7 +711,7 @@ class Minesweeper:
 
                 # 1 var in equation
                 elif len(var_num_per_equation) == 1:
-                    print('1 var equation')
+                    # print('1 var equation')
                     element_j = int(var_num_per_equation[0] % self._d)
                     element_i = int((var_num_per_equation[0] - element_j) / self._d)
                     cell = (element_i, element_j)
@@ -725,7 +725,7 @@ class Minesweeper:
                     else:
                         if cell not in safe_cell_queue:
                             safe_cell_queue.append(cell)
-        print('Finished checking knowledge base.')
+        # print('Finished checking knowledge base.')
         self.knowledge_base = rref_matrix
 
     def simplify_rref(self, rref_matrix: Matrix) -> None:
@@ -751,8 +751,8 @@ class Minesweeper:
         # pprint(rref_matrix)
         # print("Rows to keep: ", rows_to_keep)
         rref_matrix = rref_matrix[rows_to_keep, :]
-        print("After removing zeros")
-        pprint(rref_matrix)
+        # print("After removing zeros")
+        # pprint(rref_matrix)
         return rref_matrix
 
     def generate_neighbors_equation(self, i: int, j: int) -> List:
@@ -776,7 +776,7 @@ class Minesweeper:
         return equation
 
     def update_queues_island(self, curr_cell: Tuple[int, int], safe_cell_queue: List[Tuple[int, int]],
-                             mine_cell_queue: List[Tuple[int, int]], visited: List[List[bool]]) -> None:
+                             mine_cell_queue: List[Tuple[int, int]], visited: List[List[bool]], original: Tuple[int,int]) -> None:
         """
         Check for whether every hidden neighbor is safe / a mine for all revealed cells on the island. Note: the island
         is defined as all connected cells such that they are adjacent directly and diagonally.
@@ -785,30 +785,31 @@ class Minesweeper:
             safe_cell_queue: queue of cells which are determined to be definitely safe
             mine_cell_queue: queue of cells which are determined to be definitely mines
             visited: marks cells as visited while update queues on the island
+            original: original cell recursion began on
         """
         i = curr_cell[0]
         j = curr_cell[1]
-        if i < 0 or i == self._d or j < 0 or j == self._d or visited[i][j] or self.agent_board[i][j] == -1:
+        if i < 0 or i == self._d or j < 0 or j == self._d or visited[i][j] or self.agent_board[i][j] == -1 or abs(i-original[0]) > 1 or abs(j-original[1]) > 1:
             return
 
-        print('Checking island...')
-        print(i)
-        print(j)
+        # print('Checking island...')
+        # print(i)
+        # print(j)
 
         visited[i][j] = True
         self._update_queues(curr_cell, safe_cell_queue, mine_cell_queue)
 
-        self.update_queues_island((i + 1, j), safe_cell_queue, mine_cell_queue, visited)
-        self.update_queues_island((i - 1, j), safe_cell_queue, mine_cell_queue, visited)
-        self.update_queues_island((i, j + 1), safe_cell_queue, mine_cell_queue, visited)
-        self.update_queues_island((i, j - 1), safe_cell_queue, mine_cell_queue, visited)
+        self.update_queues_island((i + 1, j), safe_cell_queue, mine_cell_queue, visited, original)
+        self.update_queues_island((i - 1, j), safe_cell_queue, mine_cell_queue, visited, original)
+        self.update_queues_island((i, j + 1), safe_cell_queue, mine_cell_queue, visited, original)
+        self.update_queues_island((i, j - 1), safe_cell_queue, mine_cell_queue, visited, original)
 
         # Not sure if these 4 should also recurse / count as the island, but might as well (minimal cost for now,
         # only has benefit)
-        self.update_queues_island((i - 1, j - 1), safe_cell_queue, mine_cell_queue, visited)
-        self.update_queues_island((i + 1, j + 1), safe_cell_queue, mine_cell_queue, visited)
-        self.update_queues_island((i - 1, j + 1), safe_cell_queue, mine_cell_queue, visited)
-        self.update_queues_island((i + 1, j - 1), safe_cell_queue, mine_cell_queue, visited)
+        self.update_queues_island((i - 1, j - 1), safe_cell_queue, mine_cell_queue, visited, original)
+        self.update_queues_island((i + 1, j + 1), safe_cell_queue, mine_cell_queue, visited, original)
+        self.update_queues_island((i - 1, j + 1), safe_cell_queue, mine_cell_queue, visited, original)
+        self.update_queues_island((i + 1, j - 1), safe_cell_queue, mine_cell_queue, visited, original)
 
     def _update_queues(self, curr_cell: Tuple[int, int], safe_cell_queue: List[Tuple[int, int]],
                        mine_cell_queue: List[Tuple[int, int]]) -> None:
@@ -886,8 +887,11 @@ def main(d: int, n: int):
     minesweeper.print_environment()
     minesweeper.print_agent_board()
 
-    minesweeper.play_game('improved')
+    minesweeper.play_game('basic')
     # minesweeper.play_game_probability("triple")
 
 if __name__ == '__main__':
-    main(20, 100)
+    density = int(.8*50*50)
+    start_time = time.time()
+    main(50, density)
+    print("Run time: ", time.time()-start_time)
